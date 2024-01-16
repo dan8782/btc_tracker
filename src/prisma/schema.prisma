@@ -1,9 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -12,9 +8,8 @@ datasource db {
 }
 
 model BitcoinPrice {
-  id          Int      @id @default(autoincrement())
-  currency    String
-  rate        Decimal
-  updated_at  DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  currency   String
+  rate       Decimal
+  updated_at DateTime @default(now())
 }
-

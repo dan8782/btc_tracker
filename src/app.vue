@@ -7,14 +7,17 @@ import moment from 'moment';
 import 'flatpickr/dist/flatpickr.css';
 import 'chart.js/auto'
 
+/**
+ * конфиг для кастомного календаря ( верстка )
+ */
 const config = ref({
     altFormat: 'M j, Y',
     altInput: true,
     dateFormat: 'Y-m-d',
 });
 
-
 const { data } = await useFetch('/api/currentprice');
+
 /**
  * состояние, чтобы отследить, загрузились ли данные
  */
@@ -22,16 +25,17 @@ const isDataLoaded = ref(false);
 
 const timePeriod = ref('all');
 
-const startDate = ref(moment().subtract(1, 'month').format('YYYY-MM-DD')); // Начальная дата, например, месяц назад
-const endDate = ref(moment().format('YYYY-MM-DD')); // Конечная дата, например, сегодня
+const startDate = ref(moment().subtract(1, 'month').format('YYYY-MM-DD'));
+const endDate = ref(moment().format('YYYY-MM-DD'));
 
+// кастом выбор даты
 watch([startDate, endDate], () => {
     isDataLoaded.value = false;
     updateCustom();
     isDataLoaded.value = true;
 });
 
-
+// сортировка
 watch(timePeriod, () => {
     isDataLoaded.value = false;
     updateChartData();
@@ -42,15 +46,13 @@ const updateCustom = () => {
     let filteredData = [];
 
     const newData = JSON.parse(JSON.stringify(data.value))
-    const rawData = [...newData].sort((a, b) =>
-        moment(a.updated_at).diff(moment(b.updated_at))
-    );
+    const rawData = [...newData];
     filteredData = rawData.filter(dataItem => {
         const dataDate = moment(dataItem.updated_at);
         return dataDate.isSameOrAfter(moment(startDate.value)) && dataDate.isSameOrBefore(moment(endDate.value));
     });
 
-    console.log(filteredData);
+    filteredData = groupByDay(filteredData);
 
     const newChartData = {
         labels: filteredData.map(dataItem =>
@@ -71,33 +73,36 @@ const updateCustom = () => {
 const updateChartData = () => {
     let filteredData = [];
     const newData = JSON.parse(JSON.stringify(data.value))
-    const rawData = [...newData].sort((a, b) =>
-        moment(a.updated_at).diff(moment(b.updated_at))
-    );
-
+    const rawData = [...newData];
+    let formatString = 'YYYY MMM DD';
     switch (timePeriod.value) {
         case 'day':
-            filteredData = rawData.filter(data => moment(data.updated_at).isBetween(moment().subtract(2, 'days'), moment()));
+            filteredData = rawData.filter(data => moment(data.updated_at).isBetween(moment().subtract(1, 'days'), moment()));
+            formatString = 'HH:mm'
             break;
         case 'week':
             filteredData = rawData.filter(data => moment(data.updated_at).isBetween(moment().subtract(8, 'days'), moment()));
+            filteredData = groupByDay(filteredData);
             break;
         case 'month':
             filteredData = rawData.filter(data => moment(data.updated_at).isBetween(moment().subtract(1, 'month'), moment()));
+            filteredData = groupByDay(filteredData);
             break;
         case 'year':
             filteredData = rawData.filter(data => moment(data.updated_at).isBetween(moment().subtract(1, 'year'), moment()));
+            filteredData = groupByDay(filteredData);
             break;
         case 'all':
             filteredData = rawData.filter(data => moment(data.updated_at).isBefore(moment()));
+            filteredData = groupByDay(filteredData);
             break;
         default:
             filteredData = rawData;
     }
-    console.log(filteredData)
+
     const newChartData = {
         labels: filteredData.map(data =>
-            moment(data.updated_at).format('YYYY MMM DD')),
+            moment(data.updated_at).format(formatString)),
         datasets: [
             {
                 label: 'BTC',
@@ -109,6 +114,20 @@ const updateChartData = () => {
     };
 
     chartData.value = newChartData;
+};
+
+/**
+ * сортирует массив оставляя только дни
+ */
+const groupByDay = (data) => {
+    const grouped = {};
+    data.forEach(d => {
+        const date = moment(d.updated_at).format('YYYY-MM-DD');
+        if (!grouped[date]) {
+            grouped[date] = d;
+        }
+    });
+    return Object.values(grouped);
 };
 
 const chartData = ref({
@@ -126,7 +145,7 @@ const chartData = ref({
 const chartOptions = ref({
     responsive: true,
     maintainAspectRatio: false,
-    aspectRatio: 1 / 2,
+    aspectRatio: 1 / 1.5,
     showScale: false,
     pointRadius: 3,
     lineTension: 0.1,
@@ -141,7 +160,8 @@ const chartOptions = ref({
 
 const loadChartData = async () => {
     const newData = JSON.parse(JSON.stringify(data.value))
-    const rawData = [...newData];
+    let rawData = [...newData];
+    rawData = groupByDay(rawData);
     if (rawData && Array.isArray(rawData)) {
         chartData.value.labels = rawData.map((p) => {
             return moment(p.updated_at).format('YYYY MMM DD');
@@ -155,19 +175,90 @@ loadChartData();
 </script>
 
 <template>
-    <div>
+    <div class="chart-container">
         <Line v-if="isDataLoaded" :data="chartData" :options="chartOptions" />
-        <div v-else>Loading...</div>
+        <div v-else class="loading-text">Loading...</div>
     </div>
 
-    <flat-pickr v-model="startDate" :config="config" class="form-control" placeholder="Select date" />
-    <flat-pickr v-model="endDate" :config="config" class="form-control" placeholder="Select date" />
+    <div class="controls">
+        <div class="custom">
+            <div class="date-picker">
+                <label for="start-date">Начало:</label>
+                <flat-pickr id="start-date" v-model="startDate" :config="config" class="form-control"
+                    placeholder="Select date" />
+            </div>
+            <div class="date-picker">
+                <label for="end-date">Конец:</label>
+                <flat-pickr id="end-date" v-model="endDate" :config="config" class="form-control"
+                    placeholder="Select date" />
+            </div>
+        </div>
 
-    <select v-model="timePeriod">
-        <option value="day">День</option>
-        <option value="week">Неделя</option>
-        <option value="month">Месяц</option>
-        <option value="year">Год</option>
-        <option value="all">За все время</option>
-    </select>
+        <div class="select-box">
+            <label for="time-period">Cортировка по:</label>
+            <select v-model="timePeriod" id="time-period" class="form-control">
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+                <option value="all">All Time</option>
+            </select>
+        </div>
+    </div>
 </template>
+  
+<style>
+.chart-container {
+    text-align: center;
+}
+
+.select-box {
+    margin-left: 30px;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.custom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
+.date-picker {
+    margin-bottom: 10px;
+}
+
+.form-control {
+    width: 100%;
+    max-width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    padding: 8px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+    margin: 5px;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+    color: #333;
+}
+
+@media (max-width: 600px) {
+    .controls {
+        flex-direction: column;
+    }
+}
+</style>
+  
+
