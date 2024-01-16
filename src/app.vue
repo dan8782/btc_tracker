@@ -144,7 +144,6 @@ const loadChartData = async () => {
     const rawData = [...newData];
     if (rawData && Array.isArray(rawData)) {
         chartData.value.labels = rawData.map((p) => {
-            console.log(p.rate);
             return moment(p.updated_at).format('YYYY MMM DD');
         });
         chartData.value.datasets[0].data = rawData.map(p => p.rate);
