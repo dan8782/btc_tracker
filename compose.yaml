@@ -3,12 +3,12 @@ services:
   postgres:
     image: postgres:13
     ports:
-      - 5432:5432
+      - 5433:5433
     environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mydb
       - POSTGRES_HOST_AUTH_METHOD=trust
-      # POSTGRES_DB: mydb
-      # POSTGRES_USER: postgres
-      # POSTGRES_PASSWORD: randompassword
 
   nuxtapp:
     build: .
