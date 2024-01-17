@@ -43,7 +43,7 @@ watch(timePeriod, () => {
 });
 
 const updateCustom = () => {
-    let filteredData:any = [];
+    let filteredData: any = [];
 
     const newData = JSON.parse(JSON.stringify(data.value))
     const rawData = [...newData];
@@ -60,8 +60,8 @@ const updateCustom = () => {
         datasets: [
             {
                 label: 'BTC',
-                backgroundColor: '#758cff',
-                borderColor: "#758cff",
+                backgroundColor: '#030303',
+                borderColor: "#030303",
                 data: filteredData.map((dataItem: { rate: any; }) => dataItem.rate)
             }
         ]
@@ -71,7 +71,7 @@ const updateCustom = () => {
 };
 
 const updateChartData = () => {
-    let filteredData:any;
+    let filteredData: any;
     const newData = JSON.parse(JSON.stringify(data.value))
     const rawData = [...newData];
     let formatString = 'YYYY MMM DD';
@@ -106,8 +106,8 @@ const updateChartData = () => {
         datasets: [
             {
                 label: 'BTC',
-                backgroundColor: "#758cff",
-                borderColor: "#758cff",
+                backgroundColor: "#030303",
+                borderColor: "#030303",
                 data: filteredData.map((data: { rate: any; }) => data.rate)
             }
         ]
@@ -130,13 +130,14 @@ function groupByDay(data: any[]): Record<string, any> {
     return Object.values(grouped);
 }
 
+// all time
 const chartData = ref({
     labels: [] as string[],
     datasets: [
         {
             label: 'BTC',
-            backgroundColor: '#758cff',
-            borderColor: "#758cff",
+            backgroundColor: '#030303',
+            borderColor: "#030303",
             data: [] as number[],
         }
     ]
@@ -147,20 +148,31 @@ const chartOptions = ref({
     maintainAspectRatio: false,
     aspectRatio: 1 / 1.5,
     showScale: false,
-    pointRadius: 3,
-    lineTension: 0.1,
+    pointRadius: 2,
+    borderWidth: 1,
+    lineTension: 0,
     scales: {
         x: {
             grid: {
                 display: false
             }
         },
+    },
+    animations: {
+        tension: {
+            duration: 1000,
+            easing: 'easeOutCirc',
+            from: 0,
+            to: 0.2,
+            loop: false
+        },
     }
+
 });
 
 const loadChartData = async () => {
     const newData = JSON.parse(JSON.stringify(data.value))
-    let rawData:any = [...newData];
+    let rawData: any = [...newData];
     rawData = groupByDay(rawData);
     if (rawData && Array.isArray(rawData)) {
         chartData.value.labels = rawData.map((p) => {
@@ -172,17 +184,17 @@ const loadChartData = async () => {
 };
 
 const countries = [{
-  name: 'day',
-  value: 'day'
+    name: 'day',
+    value: 'day'
 }, {
-  name: 'Week',
-  value: 'week',
+    name: 'Week',
+    value: 'week',
 }, {
-  name: 'Year',
-  value: 'year'
+    name: 'Year',
+    value: 'year'
 }, {
-  name: 'All Time',
-  value: 'all',
+    name: 'All Time',
+    value: 'all',
 }
 ]
 
@@ -190,6 +202,22 @@ loadChartData();
 </script>
 
 <template>
+    <nav>
+        <div class="wrapper">
+            <div class="logo"><a href="#">Crypto Track</a></div>
+            <input type="radio" name="slider" id="menu-btn">
+            <input type="radio" name="slider" id="close-btn">
+            <ul class="nav-links">
+                <label for="close-btn" class="btn close-btn"><i class="fas fa-times"></i></label>
+                <li><a href="#">Home</a></li>
+                <li><a href="https://github.com/dan8782" target="_blank">Github</a></li>
+            </ul>
+            <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
+        </div>
+    </nav>
+
+
+
     <div class="chart-container">
         <Line v-if="isDataLoaded" :data="chartData" :options="chartOptions" />
         <div v-else class="loading-text">Loading...</div>
@@ -211,12 +239,129 @@ loadChartData();
 
         <div class="select-box">
             <label for="time-period">Cортировка по</label>
-            <USelectMenu v-model="timePeriod" :options="countries" option-attribute="name" id="time-period"/>
+            <USelect v-model="timePeriod" :options="countries" option-attribute="name" id="time-period" />
         </div>
     </div>
 </template>
   
 <style>
+nav {
+    position: block;
+    z-index: 99;
+    width: 100%;
+
+    background: #ffffff;
+}
+
+nav .wrapper {
+    position: relative;
+    max-width: 1300px;
+    padding: 0px 30px;
+    height: 70px;
+    line-height: 70px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.wrapper .logo a {
+    color: #030303;
+    font-size: 30px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.wrapper .nav-links {
+    display: inline-flex;
+}
+
+.nav-links li {
+    list-style: none;
+}
+
+.nav-links li a {
+    color: #0f0f0f;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 500;
+    padding: 9px 15px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.nav-links li a:hover {
+    background: #ebebeb;
+}
+
+.nav-links .mobile-item {
+    display: none;
+}
+
+.wrapper .btn {
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+}
+
+.wrapper .btn.close-btn {
+    position: absolute;
+    right: 30px;
+    top: 10px;
+}
+
+@media screen and (max-width: 450px) {
+    .wrapper .btn {
+        display: block;
+    }
+
+    .wrapper .nav-links {
+        position: fixed;
+        height: 100vh;
+        width: 100%;
+        max-width: 350px;
+        top: 0;
+        left: -100%;
+        background: #242526;
+        display: block;
+        padding: 50px 10px;
+        line-height: 50px;
+        overflow-y: auto;
+        box-shadow: 0px 15px 15px rgba(0, 0, 0, 0.18);
+        transition: all 0.3s ease;
+    }
+
+    .nav-links li {
+        margin: 15px 10px;
+    }
+
+    .nav-links li a {
+        padding: 0 20px;
+        display: block;
+        font-size: 20px;
+    }
+}
+
+nav input {
+    display: none;
+}
+
+.body-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    text-align: center;
+    padding: 0 30px;
+}
+
+.body-text div {
+    font-size: 45px;
+    font-weight: 600;
+}
+
 .chart-container {
     text-align: center;
 }
