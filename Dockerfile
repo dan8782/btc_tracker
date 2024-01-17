@@ -12,6 +12,7 @@ FROM node:18-alpine AS build
 WORKDIR /app
 COPY --from=prisma-gen /app/node_modules ./node_modules
 COPY src/ .
+RUN npm i -g nuxt
 RUN npx prisma generate
 EXPOSE 3000
 CMD ["npm", "run", "deploy"]
