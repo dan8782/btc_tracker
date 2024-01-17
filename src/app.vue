@@ -43,7 +43,7 @@ watch(timePeriod, () => {
 });
 
 const updateCustom = () => {
-    let filteredData = [];
+    let filteredData:any = [];
 
     const newData = JSON.parse(JSON.stringify(data.value))
     const rawData = [...newData];
@@ -55,14 +55,14 @@ const updateCustom = () => {
     filteredData = groupByDay(filteredData);
 
     const newChartData = {
-        labels: filteredData.map(dataItem =>
+        labels: filteredData.map((dataItem: { updated_at: moment.MomentInput; }) =>
             moment(dataItem.updated_at).format('YYYY MMM DD')),
         datasets: [
             {
                 label: 'BTC',
                 backgroundColor: '#758cff',
                 borderColor: "#758cff",
-                data: filteredData.map(dataItem => dataItem.rate)
+                data: filteredData.map((dataItem: { rate: any; }) => dataItem.rate)
             }
         ]
     };
@@ -71,7 +71,7 @@ const updateCustom = () => {
 };
 
 const updateChartData = () => {
-    let filteredData = [];
+    let filteredData:any;
     const newData = JSON.parse(JSON.stringify(data.value))
     const rawData = [...newData];
     let formatString = 'YYYY MMM DD';
@@ -101,14 +101,14 @@ const updateChartData = () => {
     }
 
     const newChartData = {
-        labels: filteredData.map(data =>
+        labels: filteredData.map((data: { updated_at: moment.MomentInput; }) =>
             moment(data.updated_at).format(formatString)),
         datasets: [
             {
                 label: 'BTC',
                 backgroundColor: "#758cff",
                 borderColor: "#758cff",
-                data: filteredData.map(data => data.rate)
+                data: filteredData.map((data: { rate: any; }) => data.rate)
             }
         ]
     };
@@ -119,8 +119,8 @@ const updateChartData = () => {
 /**
  * сортирует массив оставляя только дни
  */
-const groupByDay = (data) => {
-    const grouped = {};
+function groupByDay(data: any[]): Record<string, any> {
+    const grouped: Record<string, any> = {};
     data.forEach(d => {
         const date = moment(d.updated_at).format('YYYY-MM-DD');
         if (!grouped[date]) {
@@ -128,7 +128,7 @@ const groupByDay = (data) => {
         }
     });
     return Object.values(grouped);
-};
+}
 
 const chartData = ref({
     labels: [] as string[],
@@ -160,7 +160,7 @@ const chartOptions = ref({
 
 const loadChartData = async () => {
     const newData = JSON.parse(JSON.stringify(data.value))
-    let rawData = [...newData];
+    let rawData:any = [...newData];
     rawData = groupByDay(rawData);
     if (rawData && Array.isArray(rawData)) {
         chartData.value.labels = rawData.map((p) => {
@@ -170,6 +170,21 @@ const loadChartData = async () => {
         isDataLoaded.value = true;
     }
 };
+
+const countries = [{
+  name: 'day',
+  value: 'day'
+}, {
+  name: 'Week',
+  value: 'week',
+}, {
+  name: 'Year',
+  value: 'year'
+}, {
+  name: 'All Time',
+  value: 'all',
+}
+]
 
 loadChartData();
 </script>
@@ -195,14 +210,8 @@ loadChartData();
         </div>
 
         <div class="select-box">
-            <label for="time-period">Cортировка по:</label>
-            <select v-model="timePeriod" id="time-period" class="form-control">
-                <option value="day">Day</option>
-                <option value="week">Week</option>
-                <option value="month">Month</option>
-                <option value="year">Year</option>
-                <option value="all">All Time</option>
-            </select>
+            <label for="time-period">Cортировка по</label>
+            <USelectMenu v-model="timePeriod" :options="countries" option-attribute="name" id="time-period"/>
         </div>
     </div>
 </template>
